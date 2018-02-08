@@ -51,7 +51,7 @@ int main (int argc, char* argv[]) {
     if ((Fields & SYZ) && (syz != nullptr)) saveFields.push_back(syz);
     if ((Fields & VX ) && (vx  != nullptr)) saveFields.push_back(vx);
     if ((Fields & VY ) && (vy  != nullptr)) saveFields.push_back(vy);
-    if ((Fields & VY ) && (vz  != nullptr)) saveFields.push_back(vz);
+    if ((Fields & VZ ) && (vz  != nullptr)) saveFields.push_back(vz);
 
     int n_buf = nx*saveFields.size();
     float* buffer = new float[n_buf];
