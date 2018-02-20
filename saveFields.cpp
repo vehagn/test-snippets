@@ -39,7 +39,7 @@ int main (int argc, char* argv[]) {
     unsigned int Fields;
     std::vector<float*> saveFields;
 
-    Fields = VX|SXX|SZZ|SYY; // Assume this is input. Order does not matter.
+    Fields = VX|SZZ|SYY; // Assume this is input. Order does not matter.
 
     // Add an element in the vector of which fields should be saved.
     // Fields will always be stored in the sequence here, 
