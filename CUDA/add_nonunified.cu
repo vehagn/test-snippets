@@ -45,8 +45,8 @@ int main(int argc, char* argv[]) {
     // Wait for GPU to finish
     cudaDeviceSynchronize();
 
-    cudaMemcpy(a,x,N*sizeof(float),cudaMemcpyHostToDevice);
-    cudaMemcpy(b,y,N*sizeof(float),cudaMemcpyHostToDevice);
+    cudaMemcpy(a,x,N*sizeof(float),cudaMemcpyDeviceToHost);
+    cudaMemcpy(b,y,N*sizeof(float),cudaMemcpyDeviceToHost);
     
     // Check for errors (All values should be 3.0f;
     float maxErr = 0.0f;
