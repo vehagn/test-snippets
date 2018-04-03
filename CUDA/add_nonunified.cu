@@ -13,6 +13,9 @@ void add(int n, float *x, float *y) {
 
 int main(int argc, char* argv[]) {
     int N = 1<<20;
+    int size = (2*N*sizeof(float))>>20;
+    
+    std::cout << "Memory size " << size << " Mb" << std::endl;
 
     float *x, *y;  
     // Allocate unified memory - GPU and CPU accessible
