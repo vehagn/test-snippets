@@ -8,6 +8,10 @@ inline int idx(int w, int h, int i, int j) {
     return i + ((h-1)-j)*w;
 }
 
+inline int idx2(int nx, int i, int j) {
+    return i + j*nx;
+}
+
 void writeImg(const int *red, const int *blue, const int *green, const int w, const int h, const char* fname) {
     // Create and save a .bmp image file using red, blue, green channels
     int filesize = 54 + 3*w*h;
@@ -61,7 +65,7 @@ void writeImg(const int *grey, const int w, const int h, const char* fname) {
     writeImg(grey, grey, grey, w, h, fname);
 }
 
-void readBMP(int *img, std::string _filename) {
+void readBMP(int *img, int ntot, std::string _filename) {
 
     std::ifstream file;
     file.open(_filename, std::ios::in | std::ios::binary);
@@ -78,53 +82,53 @@ void readBMP(int *img, std::string _filename) {
             return;
         }
 
-        // Get file info
-        uint32_t fileSize = *reinterpret_cast<uint32_t *>(&header[2]);
-        uint32_t offset   = *reinterpret_cast<uint32_t *>(&header[10]);
-        uint32_t width    = *reinterpret_cast<uint32_t *>(&header[18]);
-        uint32_t height   = *reinterpret_cast<uint32_t *>(&header[22]);
-        uint32_t depth    = *reinterpret_cast<uint32_t *>(&header[28]);
-        uint32_t compress = *reinterpret_cast<uint32_t *>(&header[30]);
+        // Get file info from header
+        int32_t fileSize = *reinterpret_cast<int32_t *>(&header[2]);
+        int32_t offset   = *reinterpret_cast<int32_t *>(&header[10]);
+        int32_t width    = *reinterpret_cast<int32_t *>(&header[18]);
+        int32_t height   = *reinterpret_cast<int32_t *>(&header[22]);
+        int32_t depth    = *reinterpret_cast<int32_t *>(&header[28]);
+        int32_t compress = *reinterpret_cast<int32_t *>(&header[30]);
 
         // Compatability checks
+        bool invHeight = false;
+        if (height < 0) {
+            // Someone decided inverse height should be allowed in the BMP standard, so we have to take account of this
+            invHeight = true;
+            height = -height;
+        }
+        if (ntot != width*height){
+            std::cerr << "Error: Can't cast image of width " << width << " and height " << height << " into array of size " << ntot << std::endl;
+        }
         if (compress !=0) {
             std::cerr << "Warning: Image compression is not supported. Compression type: " << compress << std::endl;
         }
         if (depth != 24) {
-            std::cerr << "Warning: Only 24-bit files are supported. This file is " << depth  << "-bit." << std::endl;
+            std::cerr << "Warning: Only 24-bit files have been tested. This file is " << depth  << "-bit." << std::endl;
         }
 
         // Takes into account padding.
-        uint32_t dataSize = ((width*3 + 3) & (~3))*abs(height);
+        int32_t rowSize = ((width*3 + 3) & (~3));
+        int32_t dataSize = rowSize*height;
 
         // Read from file
-        unsigned char *buf = new unsigned char[dataSize];
+        char *buf = new char[dataSize];
         file.seekg(offset, std::ios::beg);
         file.read(reinterpret_cast<char*>(buf),dataSize);
         file.close();
 
-        // Read into temporary array. RGB-channels are summed.
-        int *tmp = new int[width*height];
-        for (int i=0; i<dataSize; i+=3) {
-            tmp[i/3] = int(buf[i] & 0xff) + int(buf[i+1] & 0xff) + int(buf[i+2] & 0xff);
-        }
-
-        if (height > 0) {
-            // Flip image data
-            for (int j=0; j<height; j++) {
-                for (int i=0; i<width; i++) {
-                    img[width*j+i] = tmp[width*(height-1-j)+i];
-                }
-            }
-        }
-        else {
-            for (int i=0; i<width*height; i++) {
-                img[i] = tmp[i];
+        // Read into image array.
+        // Note that rowSize can be larger than width of image due to padding.
+        for (int j=0; j<height; j++) {
+            for (int i=0; i<3*width; i+=3) {
+                // Make sure we read data in right direction.
+                int ind = (invHeight)?(idx2(width,i/3,j)):(idx2(width,i/3,height-1-j));
+                // The data we read is 8 bit which can show values between 0 and 255, or 0x00 and 0xff in hex.
+                img[ind] = (int(buf[idx2(rowSize,i+0,j)] & 0xff) + int(buf[idx2(rowSize,i+1,j)] & 0xff) + int(buf[idx2(rowSize,i+2,j)] & 0xff))/3;
             }
         }
         delete[] header;
         delete[] buf;
-        delete[] tmp;
     }
     else {
         std::cerr << "Error: unable to open file!" << std::endl;
@@ -132,8 +136,8 @@ void readBMP(int *img, std::string _filename) {
 }
 
 int main (int argc, char *argv[]) {
-    int w =    20; // 20;
-    int h =    10; // 10;
+    int w =  1024; // 64;
+    int h =   192; // 12;
     int ind =   0;
 
     int *pix = new int[w*h];
@@ -150,27 +154,29 @@ int main (int argc, char *argv[]) {
         }
     }
 
-    for (int j=0; j<h; j++) {
-        std::cout << std::endl;
-        for (int i=0; i<w; i++) {
-            std::cout << std::setw(3) << pix[idx(w,h,i,j)] << " ";
-        }
-    }
+    //for (int j=0; j<h; j++) {
+    //    std::cout << std::endl;
+    //    for (int i=0; i<w; i++) {
+    //        std::cout << std::setw(3) << pix[idx(w,h,i,j)] << " ";
+    //    }
+    //}
+    //std::cout << std::endl;
 
-    std::cout << std::endl;
-    writeImg(pix,w,h,"img.bmp");
+    //writeImg(pix,w,h,"img.bmp");
 
     int *img = new int[w*h];
 
-    readBMP(img,"img.bmp");
+    readBMP(img,w*h,"ntnu1024x192.bmp");
 
-    for (int j=0; j<h; j++) {
-        std::cout << std::endl;
-        for (int i=0; i<w; i++) {
-            std::cout << std::setw(3) << img[i+w*j] << " ";
-        }
-    }
-    std::cout << std::endl;
+    //for (int j=0; j<h; j++) {
+    //    std::cout << std::endl;
+    //    for (int i=0; i<w; i++) {
+    //        std::cout << std::setw(3) << img[i+w*j] << " ";
+    //    }
+    //}
+    //std::cout << std::endl;
+
+    writeImg(img,w,h,"out.bmp");
 
     return 0;
 }
