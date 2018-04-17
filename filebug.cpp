@@ -13,6 +13,8 @@ int main () {
     // Opening a non-existent file
     file.open(fname, std::ios::in | std::ios::binary);
 
+    std::cout << "file.good(): " << file.good() << std::endl;
+
     size_t pos = sizeof(float)*0;
     file.seekg(pos, std::ios::beg);
     file.read(reinterpret_cast<char*>(buf),sizeof(float)*n);
