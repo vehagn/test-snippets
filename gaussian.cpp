@@ -25,9 +25,9 @@ int main() {
     std::fixed;
 
     // Create data
-    int nx = 51;
-    int ny = 51;
-    int r  = 10;
+    int nx = 11;
+    int ny = 11;
+    int r  = 1;
 
     double *data = new double[nx*ny];
     double sum = 0.0;
@@ -48,8 +48,8 @@ int main() {
     std::cout << "sum: " << sum << std::endl;
 
     // Create kernel
-    int filter_nx = 2;
-    int filter_ny = 2;
+    int filter_nx = 3;
+    int filter_ny = 3;
 
     double sigma = 1.0;
 
@@ -99,7 +99,7 @@ int main() {
             //std::cout << std::endl;
             for (int fj=j-filter_ny+1; fj<j+filter_ny; fj++) {
                 for (int fi=i-filter_nx+1; fi<i+filter_nx; fi++) {
-                    //std::cout << " (" << fi << "," << fj << ") ";
+                    //std::cout << " (" << fi << "," << fj << ")@(" << std::abs(fi-i) << "," << std::abs(fj-j) << ")=" << kernel[idx2(filter_nx,std::abs(fi-i),std::abs(fj-j))];
                     newData[idx2(nnx,i,j)] += kernel[idx2(filter_nx,std::abs(fi-i),std::abs(fj-j))]*data[idx2(nx,fi+filter_nx,fj+filter_ny)];
                 }
             }
@@ -113,8 +113,8 @@ int main() {
     std::copy(newData, newData+nnx*nny, Gauss2D);
 
     // Print 2D filtered data
-    //std::cout << "2D filtered data:";
-    //printData(newData,nnx,nny);
+    std::cout << "2D filtered data:";
+    printData(newData,nnx,nny);
     std::cout << "2D filtered sum: " << sum << std::endl;
 
     // Calculate 1D Gaussian kernel
@@ -138,35 +138,44 @@ int main() {
     std::cout << "Normalised 1D kernel";;
     printData(kern,filter_nx,1);
 
-    for (int j=0; j<nny; j++) {
-        for (int i=0; i<nnx; i++) {
-            for (int fi=i-filter_nx; fi<=i+filter_nx; fi++) {
-                newData[idx2(nnx,i,j)] += kern[std::abs(fi-i)]*data[idx2(nx,fi+filter_nx,j+filter_ny)];
-            }
-        }
-    }
-
-    for (int j=0; j<nny; j++) {
-        for (int i=0; i<nnx; i++) {
-            data[idx2(nx,i+filter_nx,j+filter_ny)] = newData[idx2(nnx,i,j)];
-        }
-    }
-
-    //printData(newData,nnx,nny);
     sum = 0.0;
     for (int j=0; j<nny; j++) {
         for (int i=0; i<nnx; i++) {
-            for (int fj=j-filter_ny; fj<=j+filter_ny; fj++) {
-                newData[idx2(nnx,i,j)] += kern[std::abs(fj-j)]*data[idx2(nx,i+filter_nx,fj+filter_ny)];
+            //std::cout << std::endl;
+            for (int fi=i-filter_nx+1; fi<i+filter_nx; fi++) {
+                //std::cout << fi << " @ " << std::abs(fi-i) << " = " << kern[std::abs(fi-i)] << " ";
+                newData[idx2(nnx,i,j)] += kern[std::abs(fi-i)]*data[idx2(nx,fi+filter_nx,j+filter_ny)];
             }
-            newData[idx2(nnx,i,j)] /= 2.0;
             sum += newData[idx2(nnx,i,j)];
         }
     }
+    std::cout << "\n1DX filtered sum: " << sum << std::endl;
 
-    //std::cout << "1D filtered data:";
-    //printData(newData,nnx,nny);
-    std::cout << "1D filtered sum: " << sum << std::endl;
+    double *buf = new double[nx*ny];
+    std::fill(buf, buf+nx*ny, 0);
+    for (int j=0; j<nny; j++) {
+        for (int i=0; i<nnx; i++) {
+            buf[idx2(nx,i+filter_nx,j+filter_ny)] = newData[idx2(nnx,i,j)];
+        }
+    }
+
+    std::fill(newData, newData+nnx*nny, 0);
+    sum = 0.0;
+    for (int i=0; i<nnx; i++) {
+        for (int j=0; j<nny; j++) {
+            //std::cout << std::endl;
+            for (int fj=j-filter_ny+1; fj<j+filter_ny; fj++) {
+                //std::cout << fj << " @ " << std::abs(fj-j) << " = " << kern[std::abs(fj-j)] << " ";
+                newData[idx2(nnx,i,j)] += kern[std::abs(fj-j)]*buf[idx2(nx,i+filter_nx,fj+filter_ny)];
+            }
+        //    newData[idx2(nnx,i,j)] /= 2.0;
+            sum += newData[idx2(nnx,i,j)];
+        }
+    }
+    printData(data,nx,ny);
+    std::cout << "\n1D filtered data:";
+    printData(newData,nnx,nny);
+    std::cout << "\n1DY filtered sum: " << sum << std::endl;
 
     sum = 0.0;
     for (int i=0; i<nnx*nny; i++) {
@@ -174,7 +183,7 @@ int main() {
         sum += newData[i];
     }
     //std::cout << "Difference between 1D and 2D";
-    //printData(newData,nnx,nny);
+    printData(newData,nnx,nny);
     std::cout << "Difference: " << sum << std::endl;
 
 
