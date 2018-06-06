@@ -13,7 +13,11 @@ int main () {
     // Opening a non-existent file
     file.open(fname, std::ios::in | std::ios::binary);
 
-    std::cout << "file.good(): " << file.good() << std::endl;
+    std::cout << "file.is_open(): " << file.is_open() << std::endl;
+    std::cout << "file.fail():    " << file.fail()    << std::endl;
+    std::cout << "file.good():    " << file.good()    << std::endl;
+    std::cout << "file.bad():     " << file.bad()     << std::endl;
+    std::cout << "file.eof():     " << file.eof()     << std::endl;
 
     size_t pos = sizeof(float)*0;
     file.seekg(pos, std::ios::beg);
